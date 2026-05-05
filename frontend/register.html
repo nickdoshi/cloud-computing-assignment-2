@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign up</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="card">
+
+        <span class="logo">&#9835;</span>
+        <h1>Sign up to start listening</h1>
+
+        <div class="alert alert-error"   id="error-msg">The email already exists</div>
+        <div class="alert alert-success" id="success-msg">Account created! Redirecting to login…</div>
+
+        <form id="register-form" novalidate>
+            <div class="form-group">
+                <label for="email">Email address</label>
+                <input type="email" id="email" placeholder="name@domain.com" required>
+            </div>
+            <div class="form-group">
+                <label for="user_name">Username</label>
+                <input type="text" id="user_name" placeholder="What should we call you?" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" placeholder="" required>
+            </div>
+            <button type="submit" class="btn-primary">Create account</button>
+        </form>
+
+        <div class="card-footer">
+            Already have an account? <a href="login.html">Log in</a>
+        </div>
+
+    </div>
+
+    <script src="js/config.js"></script>
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email     = document.getElementById('email').value.trim();
+            const user_name = document.getElementById('user_name').value.trim();
+            const password  = document.getElementById('password').value;
+            const errorEl   = document.getElementById('error-msg');
+            const successEl = document.getElementById('success-msg');
+
+            errorEl.style.display   = 'none';
+            successEl.style.display = 'none';
+
+            try {
+                const res  = await fetch(`${BACKEND_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, user_name, password })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    successEl.style.display = 'block';
+                    setTimeout(() => window.location.href = 'login.html', 1500);
+                } else {
+                    errorEl.style.display = 'block';
+                }
+            } catch {
+                errorEl.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
