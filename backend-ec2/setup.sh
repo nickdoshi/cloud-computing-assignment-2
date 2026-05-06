@@ -9,8 +9,15 @@ dnf install -y java-17-amazon-corretto nginx
 
 # ── 2. Copy the Spring Boot JAR ───────────────────────────────────────────────
 # Run this from the repo root after: ./mvnw -q package -DskipTests
-JAR_PATH="$(dirname "$0")/../target/backend-0.0.1-SNAPSHOT.jar"
-cp "$JAR_PATH" /opt/backend.jar
+# Accept JAR from ~/target/ (scp'd separately) or from a local Maven build
+if [ -f "$HOME/target/backend-0.0.1-SNAPSHOT.jar" ]; then
+    cp "$HOME/target/backend-0.0.1-SNAPSHOT.jar" /opt/backend.jar
+elif [ -f "$(dirname "$0")/../target/backend-0.0.1-SNAPSHOT.jar" ]; then
+    cp "$(dirname "$0")/../target/backend-0.0.1-SNAPSHOT.jar" /opt/backend.jar
+else
+    echo "ERROR: JAR not found. Copy target/backend-0.0.1-SNAPSHOT.jar to ~/target/ first."
+    exit 1
+fi
 
 # ── 3. Nginx reverse proxy: port 80 → 8080 ────────────────────────────────────
 cat > /etc/nginx/conf.d/backend.conf <<'EOF'

@@ -19,16 +19,16 @@ TABLE_NAME = "login"
 #       dataset image (Table 1 in the spec). The structure must match:
 #       email (string, PK) | user_name (string) | password (string)
 LOGIN_DATA = [
-    {"email": "user1@example.com", "user_name": "User One",   "password": "password1"},
-    {"email": "user2@example.com", "user_name": "User Two",   "password": "password2"},
-    {"email": "user3@example.com", "user_name": "User Three", "password": "password3"},
-    {"email": "user4@example.com", "user_name": "User Four",  "password": "password4"},
-    {"email": "user5@example.com", "user_name": "User Five",  "password": "password5"},
-    {"email": "user6@example.com", "user_name": "User Six",   "password": "password6"},
-    {"email": "user7@example.com", "user_name": "User Seven", "password": "password7"},
-    {"email": "user8@example.com", "user_name": "User Eight", "password": "password8"},
-    {"email": "user9@example.com", "user_name": "User Nine",  "password": "password9"},
-    {"email": "user10@example.com","user_name": "User Ten",   "password": "password10"},
+    {"email": "test1@student.rmit.edu.au", "user_name": "Test+1",   "password": "0123456789"},
+    {"email": "test2@student.rmit.edu.au", "user_name": "Test+2",   "password": "1234567890"},
+    {"email": "test3@student.rmit.edu.au", "user_name": "Test+3", "password": "2345678901"},
+    {"email": "test4@student.rmit.edu.au", "user_name": "Test+4",  "password": "3456789012"},
+    {"email": "test5@student.rmit.edu.au", "user_name": "Test+5",  "password": "4567890123"},
+    {"email": "test6@student.rmit.edu.au", "user_name": "Test+6",   "password": "5678901234"},
+    {"email": "test7@student.rmit.edu.au", "user_name": "Test+7", "password": "6789012345"},
+    {"email": "test8@student.rmit.edu.au", "user_name": "Test+8", "password": "7890123456"},
+    {"email": "test9@student.rmit.edu.au", "user_name": "Test+9",  "password": "8901234567"},
+    {"email": "test10@student.rmit.edu.au","user_name": "Test+10",   "password": "9012345678"},
 ]
 # ──────────────────────────────────────────────────────────────────────────────
 

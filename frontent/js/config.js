@@ -2,4 +2,4 @@
 // EC2:     'http://<EC2_PUBLIC_IP>'
 // ECS:     'http://<ALB_DNS_NAME>'
 // Lambda:  'https://<API_GATEWAY_ID>.execute-api.us-east-1.amazonaws.com/<stage>'
-const BACKEND_URL = 'http://localhost:8080';
+const BACKEND_URL = 'http://3.90.154.76';

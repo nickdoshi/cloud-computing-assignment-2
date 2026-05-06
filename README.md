@@ -45,17 +45,18 @@
 │   └── subscriptions/               # GET/POST/DELETE handler  ⚠️ not yet implemented
 │
 ├── frontend/                        # Static site — hosted on S3
-│   ├── login.html                   # Login page
-│   ├── register.html                # Register page
+│   ├── login.html                   # Login page  ✅ done
+│   ├── register.html                # Register page  ✅ done
 │   ├── main.html                    # Main page (query + subscriptions) ⚠️ not yet built
 │   ├── css/styles.css               # Spotify-dark shared stylesheet
 │   └── js/config.js                 # BACKEND_URL switcher — change this for each demo
 │
-├── init/                            # One-off AWS initialisation scripts ⚠️ not yet built
+├── init/                            # One-off AWS initialisation scripts
 │   ├── create_login_table.py        # Task 1 — create + seed login table
 │   ├── create_music_table.py        # Task 2 — create music table with GSI/LSI
 │   ├── load_music_data.py           # Task 3 — load 2026a2_songs.json → DynamoDB
-│   └── upload_images_s3.py          # Task 4 — download artist images → S3
+│   ├── upload_images_s3.py          # Task 4 — download artist images → S3
+│   └── requirements.txt             # boto3, requests
 │
 ├── report/
 │   └── design_choices.md            # Draft report content (frontend/backend/DynamoDB rationale)
@@ -84,56 +85,54 @@ AWS credentials are picked up automatically from `~/.aws/credentials` locally, o
 
 ## Task Checklist
 
-### Phase 1 — AWS Setup (do first, everything else depends on this)
+### Phase 1 — AWS Setup ✅
 
-- [ ] Start AWS Academy Lab session, confirm region `us-east-1`
-- [ ] Create S3 bucket for artist images (private — no public ACLs)
-- [ ] Set `aws.s3.bucket-name` in `src/main/resources/application.properties`
-- [ ] Note the `LabRole` ARN (used for EC2 instance profile, ECS task role, Lambda execution role)
+- [x] Start AWS Academy Lab session, confirm region `us-east-1`
+- [x] Create S3 bucket for artist images (`music-app-images-211`, private — no public ACLs)
+- [x] Set `aws.s3.bucket-name=music-app-images-211` in `src/main/resources/application.properties`
+- [x] Note the `LabRole` ARN (used for EC2 instance profile, ECS task role, Lambda execution role)
 
 ---
 
 ### Phase 2 — Database & Storage Initialisation (`init/`)
 
-> These are standalone Python scripts run once to set up AWS resources. They do not need to be part of the Spring Boot app.
+> Standalone Python scripts — run once to set up AWS resources.
+> Requires fresh AWS Academy credentials in `~/.aws/credentials` before each run.
+
+```bash
+pip install -r init/requirements.txt
+```
 
 #### Task 1 — Login table
-- [ ] `create_login_table.py` — create DynamoDB table `login`
-  - Partition key: `email` (String)
-  - Seed with the 10 provided user records (plain text passwords are permitted for this assignment)
+- [x] `create_login_table.py` written — creates DynamoDB table `login`, seeds 10 user records
+- [ ] Run: `python init/create_login_table.py`
 
-#### Task 2 — Music table schema design (marks depend on this)
-- [ ] Analyse `2026a2_songs.json` — identify cardinality of title/artist/album
-- [ ] Key schema: partition key = `artist`, sort key = `title` (ensures no overwrites on import)
-- [ ] GSI: `YearArtistIndex` — PK: `year`, SK: `artist` (enables query by year)
-- [ ] LSI: `ArtistAlbumIndex` — PK: `artist`, SK: `album` (enables query by artist + album)
-- [ ] `create_music_table.py` — create the `music` table with the above schema
+#### Task 2 — Music table
+- [x] `create_music_table.py` written — PK: `artist`, SK: `title`, GSI: `YearArtistIndex`, LSI: `ArtistAlbumIndex`
+- [ ] Run: `python init/create_music_table.py`
 
 #### Task 3 — Load music data
-- [ ] `load_music_data.py` — parse `2026a2_songs.json`, batch-write all records to DynamoDB
-- [ ] Verify record count matches JSON (no silent overwrites)
+- [x] `load_music_data.py` written — batch-writes all songs from `2026a2_songs.json`
+- [ ] Run: `python init/load_music_data.py`
 
 #### Task 4 — Upload artist images to S3
-- [ ] `upload_images_s3.py` — for each unique `image_url` in the JSON:
-  - Download the image from the original URL
-  - Upload to the S3 bucket (key = e.g. `artist-images/<artist-slug>.jpg`)
-  - Update the DynamoDB `image_url` attribute on each song to store the S3 object key
+- [x] `upload_images_s3.py` written — downloads images, uploads to S3, updates DynamoDB `image_url`
+- [ ] Run: `python init/upload_images_s3.py`
 
 ---
 
 ### Phase 3 — Frontend (`frontend/`)
 
-Hosted on **S3 static website hosting**. All API calls are made from JavaScript using `fetch()`.
+Hosted on **S3 static website hosting**. All API calls made from JavaScript using `fetch()`.  
+Set `BACKEND_URL` in `frontend/js/config.js` to point at the active backend before testing.
 
 #### Login page — `login.html` ✅ done
-- Email field, Password field, Login button, Register link
-- Shows `"email or password is invalid"` on failure
-- Saves `email` and `user_name` to `sessionStorage` on success, redirects to `main.html`
+- Email + password form, shows `"email or password is invalid"` on failure
+- Saves `email` and `user_name` to `sessionStorage`, redirects to `main.html`
 
 #### Register page — `register.html` ✅ done
-- Email field, Username field, Password field, Create account button, Login link
-- Shows `"The email already exists"` on duplicate email
-- Shows success banner then redirects to `login.html`
+- Email + username + password form
+- Shows `"The email already exists"` on duplicate, success banner → redirect to `login.html`
 
 #### Main page — `main.html` ⚠️ not yet built
 - [ ] **User area** — display `sessionStorage.getItem('user_name')`, Logout link
@@ -168,16 +167,73 @@ All three backends expose the **same REST API**. Change `BACKEND_URL` in `fronte
 
 ---
 
-#### 4a — EC2 (Spring Boot on EC2)
+#### 4a — EC2 (Spring Boot on EC2) ⚠️ in progress
 
-The Spring Boot app at the repo root is the EC2 backend.
+**1. Build the JAR locally:**
+```bash
+./mvnw package -DskipTests
+```
 
-- [ ] Launch EC2 instance (Amazon Linux 2023), attach `LabRole` as instance profile
-- [ ] Build the JAR: `./mvnw package -DskipTests`
-- [ ] Copy JAR to EC2, then run `sudo bash backend-ec2/setup.sh`
-  - Installs Java 17 + Nginx, configures Nginx to proxy port 80 → 8080, registers a systemd service
-- [ ] Confirm `http://<EC2_PUBLIC_IP>/health` returns `{"status":"ok"}`
-- [ ] Complete `MusicService.java` and `MusicController.java` TODOs
+**2. Copy JAR to EC2:**
+```bash
+ssh -i music-app-key.pem ec2-user@<EC2_PUBLIC_IP> "mkdir -p ~/target"
+scp -i music-app-key.pem target/backend-0.0.1-SNAPSHOT.jar ec2-user@<EC2_PUBLIC_IP>:~/target/
+```
+
+**3. SSH in and run setup (installs Java 17 + Nginx, registers systemd service):**
+```bash
+ssh -i music-app-key.pem ec2-user@<EC2_PUBLIC_IP>
+sudo bash setup.sh
+```
+
+> If setup.sh fails on the `cp` step, run these manually instead:
+> ```bash
+> sudo cp ~/target/backend-0.0.1-SNAPSHOT.jar /opt/backend.jar
+> sudo tee /etc/nginx/conf.d/backend.conf > /dev/null <<'EOF'
+> server {
+>     listen 80;
+>     server_name _;
+>     location / {
+>         proxy_pass         http://127.0.0.1:8080;
+>         proxy_set_header   Host $host;
+>         proxy_set_header   X-Real-IP $remote_addr;
+>         proxy_read_timeout 60s;
+>     }
+> }
+> EOF
+> sudo sed -i '/listen.*80/d' /etc/nginx/nginx.conf 2>/dev/null || true
+> sudo systemctl enable --now nginx
+> sudo tee /etc/systemd/system/backend.service > /dev/null <<'EOF'
+> [Unit]
+> Description=Music App Spring Boot Backend
+> After=network.target
+> [Service]
+> ExecStart=/usr/bin/java -jar /opt/backend.jar
+> Restart=on-failure
+> StandardOutput=journal
+> StandardError=journal
+> [Install]
+> WantedBy=multi-user.target
+> EOF
+> sudo systemctl daemon-reload
+> sudo systemctl enable --now backend
+> ```
+
+**4. Verify:**
+```bash
+curl http://<EC2_PUBLIC_IP>/health
+# Expected: {"status":"ok"}
+```
+
+**5. Update config.js:**
+```js
+const BACKEND_URL = 'http://<EC2_PUBLIC_IP>';
+```
+
+- [x] Launch EC2 instance (Amazon Linux 2023 t3.micro), attach `LabRole` as instance profile
+- [x] Build JAR and copy to EC2
+- [ ] Confirm `/health` returns `{"status":"ok"}`
+- [ ] Complete `MusicService.java` and `MusicController.java` TODOs (teammate)
 - [ ] Test all six endpoints
 
 #### 4b — ECS (Spring Boot in a container)

@@ -23,7 +23,7 @@ from botocore.exceptions import ClientError
 
 REGION        = "us-east-1"
 TABLE_NAME    = "music"
-S3_BUCKET     = ""          # ← set your bucket name, or set env var S3_BUCKET
+S3_BUCKET     = "music-app-images-211"         
 S3_PREFIX     = "artist-images"
 SONGS_FILE    = os.path.join(os.path.dirname(__file__), "..", "2026a2_songs.json")
 
@@ -40,7 +40,7 @@ def slugify(text):
     """Convert an artist name to a safe S3 key segment."""
     text = text.lower().strip()
     text = re.sub(r"[^\w\s-]", "", text)   # remove special chars
-    text = re.sub(r"[\s]+", "_", text)     # spaces → underscores
+    text = re.sub(r"[\s]+", "_", text)     # replace spaces with underscores
     return text
 
 
@@ -63,7 +63,9 @@ def guess_extension(url, content_type):
 
 def load_songs(path):
     with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+        data = json.load(f)
+    # JSON is wrapped: {"songs": [...]}
+    return data["songs"] if "songs" in data else data
 
 
 def build_artist_image_map(songs):
