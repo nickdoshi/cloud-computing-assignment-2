@@ -60,10 +60,21 @@ public class MusicService {
      * a temporary pre-signed GET URL valid for 1 hour so the frontend can display the image.
      * Return an empty string if the key is blank or if presigning fails.
      *
-     * TODO: use s3Presigner.presignGetObject() with GetObjectPresignRequest and a 1-hour duration.
      */
     public String generatePresignedUrl(String s3Key) {
-        // TODO: implement
+        if (s3Key == null || s3Key.isBlank()) return "";
+
+        try{
+            GetObjectRequest getObjectRequest =
+                    GetObjectRequest.builder().bucket(bucketName).key(s3Key).build();
+
+            GetObjectPresignRequest presignRequest =
+                    GetObjectPresignRequest.builder().signatureDuration(Duration.ofHours(1)).getObjectRequest(getObjectRequest).build();
+        }
+        catch (Exception e){
+            return "";
+        }
+
         return "";
     }
 
@@ -75,13 +86,30 @@ public class MusicService {
      * - year   → #yr = :year                (exact match — "year" is a DynamoDB reserved word)
      * - album  → contains(#album, :album)   (partial match)
      *
-     * TODO: for each non-blank field, add an entry to names, values, and parts.
      */
     private List<String> buildFilterParts(String title, String year, String album,
                                           Map<String, String> names,
                                           Map<String, AttributeValue> values) {
-        // TODO: implement
-        return Collections.emptyList();
+        List<String> parts = new ArrayList<>();
+        if (title != null && !title.isBlank()) {
+            names.put("#title", "title");
+            values.put(":title", AttributeValue.fromS(title));
+            parts.add("contains(#title, :title)");
+        }
+
+        if (year != null && !year.isBlank()) {
+            names.put("#yr", "year");
+            values.put(":year", AttributeValue.fromS(year));
+            parts.add("#yr = :year");
+        }
+
+        if (album != null && !album.isBlank()) {
+            names.put("#album", "album");
+            values.put(":album", AttributeValue.fromS(album));
+            parts.add("contains(#album, :album)");
+        }
+
+        return parts;
     }
 
     /**
