@@ -39,8 +39,34 @@ public class MusicService {
      * TODO: implement query logic using buildFilterParts(), then map results via toSongMap().
      */
     public List<Map<String, String>> query(String title, String year, String artist, String album) {
-        // TODO: implement
-        return Collections.emptyList();
+        Map<String, String> names = new HashMap<>();
+        Map<String, AttributeValue> values = new HashMap<>();
+
+        List<String> filterParts = buildFilterParts(title, year, album, names, values);
+
+        // Scan with a filter expression
+        if (artist == null || artist.isBlank()) {
+            ScanRequest.Builder scanBuilder = ScanRequest.builder().tableName(musicTable);
+
+            if (!filterParts.isEmpty()) {
+                scanBuilder.filterExpression(String.join(" AND ", filterParts)).expressionAttributeNames(names).expressionAttributeValues(values);
+            }
+            ScanResponse scanResponse = dynamoDb.scan(scanBuilder.build());
+            return scanResponse.items().stream().map(this::toSongMap).collect(Collectors.toList());
+        }
+
+        names.put("#artist", "artist");
+        values.put(":artist", AttributeValue.fromS(artist));
+        // Query with partition key
+        QueryRequest.Builder queryBuilder =
+                QueryRequest.builder().tableName(musicTable).keyConditionExpression("#artist = artist").expressionAttributeNames(names).expressionAttributeValues(values);
+        // Apply filter expression on other fields
+        if (!filterParts.isEmpty()) {
+            queryBuilder.filterExpression(String.join(" AND ", filterParts));
+        }
+        QueryResponse response = dynamoDb.query(queryBuilder.build());
+        return response.items().stream().map(this::toSongMap).collect(Collectors.toList());
+
     }
 
     /**
