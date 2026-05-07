@@ -88,8 +88,8 @@ AWS credentials are picked up automatically from `~/.aws/credentials` locally, o
 ### Phase 1 — AWS Setup ✅
 
 - [x] Start AWS Academy Lab session, confirm region `us-east-1`
-- [x] Create S3 bucket for artist images (`music-app-images-211`, private — no public ACLs)
-- [x] Set `aws.s3.bucket-name=music-app-images-211` in `src/main/resources/application.properties`
+- [x] Create S3 bucket for artist images (`music-app-images-211-rmit`, private — no public ACLs)
+- [x] Set `aws.s3.bucket-name=music-app-images-211-rmit` in `src/main/resources/application.properties`
 - [x] Note the `LabRole` ARN (used for EC2 instance profile, ECS task role, Lambda execution role)
 
 ---
