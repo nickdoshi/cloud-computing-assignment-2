@@ -57,9 +57,10 @@ public class MusicService {
 
         names.put("#artist", "artist");
         values.put(":artist", AttributeValue.fromS(artist));
+
         // Query with partition key
         QueryRequest.Builder queryBuilder =
-                QueryRequest.builder().tableName(musicTable).keyConditionExpression("#artist = artist").expressionAttributeNames(names).expressionAttributeValues(values);
+                QueryRequest.builder().tableName(musicTable).keyConditionExpression("#artist = :artist").expressionAttributeNames(names).expressionAttributeValues(values);
         // Apply filter expression on other fields
         if (!filterParts.isEmpty()) {
             queryBuilder.filterExpression(String.join(" AND ", filterParts));
