@@ -23,7 +23,7 @@ from botocore.exceptions import ClientError
 
 REGION        = "us-east-1"
 TABLE_NAME    = "music"
-S3_BUCKET     = "music-app-images-211"         
+S3_BUCKET     = "music-app-images-211-rmit"
 S3_PREFIX     = "artist-images"
 SONGS_FILE    = os.path.join(os.path.dirname(__file__), "..", "2026a2_songs.json")
 
@@ -120,19 +120,22 @@ def update_dynamodb(dynamodb, songs, artist, s3_key):
         if song.get("artist", "").strip() != artist:
             continue
         title = song.get("title", "").strip()
+        year  = song.get("year", "").strip()
+        album = song.get("album", "").strip()
         if not title:
             continue
+        title_year_album = f"{title}#{year}#{album}"
         try:
             table.update_item(
-                Key={"artist": artist, "title": title},
+                Key={"artist": artist, "title_year_album": title_year_album},
                 UpdateExpression="SET image_url = :key",
                 ExpressionAttributeValues={":key": s3_key},
             )
             updated += 1
         except ClientError as e:
             print(f"  [WARN] DynamoDB update failed for '{artist}' / '{title}': {e}")
-
     return updated
+
 
 
 def main():

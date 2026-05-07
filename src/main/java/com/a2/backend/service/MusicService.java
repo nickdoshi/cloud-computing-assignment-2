@@ -39,19 +39,59 @@ public class MusicService {
      * TODO: implement query logic using buildFilterParts(), then map results via toSongMap().
      */
     public List<Map<String, String>> query(String title, String year, String artist, String album) {
-        // TODO: implement
-        return Collections.emptyList();
+        Map<String, String> names = new HashMap<>();
+        Map<String, AttributeValue> values = new HashMap<>();
+
+        List<String> filterParts = buildFilterParts(title, year, album, names, values);
+
+        // Scan with a filter expression
+        if (artist == null || artist.isBlank()) {
+            ScanRequest.Builder scanBuilder = ScanRequest.builder().tableName(musicTable);
+
+            if (!filterParts.isEmpty()) {
+                scanBuilder.filterExpression(String.join(" AND ", filterParts)).expressionAttributeNames(names).expressionAttributeValues(values);
+            }
+            ScanResponse scanResponse = dynamoDb.scan(scanBuilder.build());
+            return scanResponse.items().stream().map(this::toSongMap).collect(Collectors.toList());
+        }
+
+        names.put("#artist", "artist");
+        values.put(":artist", AttributeValue.fromS(artist));
+
+        // Query with partition key
+        QueryRequest.Builder queryBuilder =
+                QueryRequest.builder().tableName(musicTable).keyConditionExpression("#artist = :artist").expressionAttributeNames(names).expressionAttributeValues(values);
+        // Apply filter expression on other fields
+        if (!filterParts.isEmpty()) {
+            queryBuilder.filterExpression(String.join(" AND ", filterParts));
+        }
+        QueryResponse response = dynamoDb.query(queryBuilder.build());
+        return response.items().stream().map(this::toSongMap).collect(Collectors.toList());
+
     }
 
     /**
-     * Looks up a single music record by its primary key (artist + title) and returns
+     * Looks up a single music record by its primary key (artist + title_year_album) and returns
      * the raw S3 object key stored in the "image_url" attribute.
      * Used by SubscriptionService when saving a new subscription.
      *
-     * TODO: call dynamoDb.getItem() with the artist (PK) and title (SK), return getString(item, "image_url").
      */
-    public String getImageKey(String artist, String title) {
-        // TODO: implement
+    public String getImageKey(String artist, String title, String year, String album) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put("artist", AttributeValue.fromS(artist));
+
+        String title_year_album = title + "#" + year + "#" + album;
+        key.put("title_year_album", AttributeValue.fromS(title_year_album));
+
+        GetItemRequest itemRequest =
+                GetItemRequest.builder().tableName(musicTable).key(key).build();
+
+        GetItemResponse response = dynamoDb.getItem(itemRequest);
+
+        if (response.item() != null) {
+            return  getString(response.item(), "image_url");
+        }
+
         return "";
     }
 
@@ -60,10 +100,21 @@ public class MusicService {
      * a temporary pre-signed GET URL valid for 1 hour so the frontend can display the image.
      * Return an empty string if the key is blank or if presigning fails.
      *
-     * TODO: use s3Presigner.presignGetObject() with GetObjectPresignRequest and a 1-hour duration.
      */
     public String generatePresignedUrl(String s3Key) {
-        // TODO: implement
+        if (s3Key == null || s3Key.isBlank()) return "";
+
+        try{
+            GetObjectRequest getObjectRequest =
+                    GetObjectRequest.builder().bucket(bucketName).key(s3Key).build();
+
+            GetObjectPresignRequest presignRequest =
+                    GetObjectPresignRequest.builder().signatureDuration(Duration.ofHours(1)).getObjectRequest(getObjectRequest).build();
+        }
+        catch (Exception e){
+            return "";
+        }
+
         return "";
     }
 
@@ -75,24 +126,44 @@ public class MusicService {
      * - year   → #yr = :year                (exact match — "year" is a DynamoDB reserved word)
      * - album  → contains(#album, :album)   (partial match)
      *
-     * TODO: for each non-blank field, add an entry to names, values, and parts.
      */
     private List<String> buildFilterParts(String title, String year, String album,
                                           Map<String, String> names,
                                           Map<String, AttributeValue> values) {
-        // TODO: implement
-        return Collections.emptyList();
+        List<String> parts = new ArrayList<>();
+        if (title != null && !title.isBlank()) {
+            names.put("#title", "title");
+            values.put(":title", AttributeValue.fromS(title));
+            parts.add("contains(#title, :title)");
+        }
+
+        if (year != null && !year.isBlank()) {
+            names.put("#yr", "year");
+            values.put(":year", AttributeValue.fromS(year));
+            parts.add("#yr = :year");
+        }
+
+        if (album != null && !album.isBlank()) {
+            names.put("#album", "album");
+            values.put(":album", AttributeValue.fromS(album));
+            parts.add("contains(#album, :album)");
+        }
+
+        return parts;
     }
 
     /**
      * Converts a raw DynamoDB item map into a plain String map for the API response.
      * Fields: title, artist, year, album, image_url (pre-signed URL via generatePresignedUrl()).
-     *
-     * TODO: extract each attribute with getString(), call generatePresignedUrl() for image_url.
+     *.
      */
-    private Map<String, String> toSongMap(Map<String, AttributeValue> item) {
-        // TODO: implement
-        return Collections.emptyMap();
+    private Map<String, String> toSongMap(Map<String, AttributeValue> item) {        Map<String, String> song = new HashMap<>();
+        song.put("title",     getString(item, "title"));
+        song.put("artist",    getString(item, "artist"));
+        song.put("year",      getString(item, "year"));
+        song.put("album",     getString(item, "album"));
+        song.put("image_url", generatePresignedUrl(getString(item, "image_url")));
+        return song;
     }
 
     /**

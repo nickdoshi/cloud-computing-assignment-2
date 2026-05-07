@@ -32,7 +32,6 @@ public class MusicController {
      * Returns an empty array [] if nothing matches — the frontend shows
      * "No result is retrieved. Please query again" in that case.
      *
-     * TODO: call musicService.query(title, year, artist, album) and return the result.
      */
     @GetMapping("/music")
     public List<Map<String, String>> queryMusic(
@@ -40,7 +39,6 @@ public class MusicController {
             @RequestParam(required = false) String year,
             @RequestParam(required = false) String artist,
             @RequestParam(required = false) String album) {
-        // TODO: implement — replace with: return musicService.query(title, year, artist, album);
-        return Collections.emptyList();
+        return musicService.query(title, year, artist, album);
     }
 }

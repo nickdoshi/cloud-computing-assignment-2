@@ -37,7 +37,7 @@ public class SubscriptionService {
     // subscription_id = "artist#title" — natural key that prevents duplicate subscriptions.
     public void addSubscription(String email, String title, String artist, String year, String album) {
         String subscriptionId = artist + "#" + title;
-        String imageKey = musicService.getImageKey(artist, title);
+        String imageKey = musicService.getImageKey(artist, title, year, album);
 
         Map<String, AttributeValue> item = new HashMap<>();
         item.put("email", AttributeValue.fromS(email));
