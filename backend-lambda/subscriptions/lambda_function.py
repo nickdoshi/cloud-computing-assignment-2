@@ -7,7 +7,7 @@ dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
 subscriptions_table = dynamodb.Table("subscriptions")
 
 s3_client = boto3.client("s3", region_name="us-east-1")
-S3_BUCKET = "music-app-images-s3947881"
+S3_BUCKET = "music-app-images-211-rmit"
 PRESIGN_EXPIRY = 3600  # 1 hour
 
 HEADERS = {
@@ -19,10 +19,10 @@ HEADERS = {
 
 
 def lambda_handler(event, context):
-    method = event.get("httpMethod", "")
+    method = event.get("httpMethod") or event.get("method") or ""
 
     if method == "OPTIONS":
-        return {"statusCode": 200, "headers": HEADERS, "body": ""}
+        return {}
 
     try:
         if method == "GET":
@@ -40,8 +40,9 @@ def lambda_handler(event, context):
 
 
 def handle_get(event):
-    params = event.get("queryStringParameters") or {}
-    email = (params.get("email") or "").strip()
+    params = get_params(event)
+    path_params = get_path_params(event)
+    email = (path_params.get("email") or params.get("email") or "").strip()
 
     if not email:
         return respond(400, {"message": "email is required."})
@@ -64,7 +65,7 @@ def handle_get(event):
 
 
 def handle_post(event):
-    body = json.loads(event.get("body", "{}"))
+    body = get_body(event)
     email    = body.get("email", "").strip()
     artist   = body.get("artist", "").strip()
     title    = body.get("title", "").strip()
@@ -91,15 +92,23 @@ def handle_post(event):
 
 
 def handle_delete(event):
-    params = event.get("queryStringParameters") or {}
-    email  = (params.get("email")  or "").strip()
-    artist = (params.get("artist") or "").strip()
-    title  = (params.get("title")  or "").strip()
+    params = get_params(event)
+    path_params = get_path_params(event)
+    email = (path_params.get("email") or params.get("email") or "").strip()
+    subscription_id = (
+        path_params.get("subscriptionId")
+        or params.get("subscriptionId")
+        or ""
+    ).strip()
 
-    if not email or not artist or not title:
-        return respond(400, {"message": "email, artist, and title are required."})
+    if not subscription_id:
+        artist = (params.get("artist") or "").strip()
+        title = (params.get("title") or "").strip()
+        if artist and title:
+            subscription_id = f"{artist}#{title}"
 
-    subscription_id = f"{artist}#{title}"
+    if not email or not subscription_id:
+        return respond(400, {"message": "email and subscriptionId are required."})
 
     subscriptions_table.delete_item(Key={
         "email":           email,
@@ -111,6 +120,7 @@ def handle_delete(event):
 
 def to_subscription_map(item):
     return {
+        "subscription_id": item.get("subscription_id", ""),
         "title":     item.get("title", ""),
         "artist":    item.get("artist", ""),
         "year":      item.get("year", ""),
@@ -133,8 +143,19 @@ def generate_presigned_url(s3_key):
 
 
 def respond(status, body):
-    return {
-        "statusCode": status,
-        "headers": HEADERS,
-        "body": json.dumps(body),
-    }
+    return body
+
+
+def get_body(event):
+    body = event.get("body", {})
+    if isinstance(body, str):
+        return json.loads(body or "{}")
+    return body or {}
+
+
+def get_params(event):
+    return event.get("queryStringParameters") or event.get("query") or {}
+
+
+def get_path_params(event):
+    return event.get("pathParameters") or event.get("path") or {}

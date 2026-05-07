@@ -4,6 +4,10 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+### OS files ###
+.DS_Store
+Thumbs.db
+
 ### STS ###
 .apt_generated
 .classpath
@@ -31,5 +35,26 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Python ###
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+### Local AWS / secrets ###
+*.pem
+.env
+.env.*
+
+### DynamoDB Local ###
+DynamoDBLocal.jar
+DynamoDBLocal_lib/
+dynamodb-local-metadata.json
+*.db
+*.sqlite
+*.sqlite3
+
+### Assignment/local reference files ###
 2026a2_songs.json
-music-app-key.pem
+AssignmentSpec.txt

@@ -7,7 +7,7 @@ dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
 music_table = dynamodb.Table("music")
 
 s3_client = boto3.client("s3", region_name="us-east-1")
-S3_BUCKET = "music-app-images-211-rmit"
+S3_BUCKET = "music-app-images-211"
 PRESIGN_EXPIRY = 3600  # 1 hour
 
 HEADERS = {
@@ -20,10 +20,10 @@ HEADERS = {
 
 def lambda_handler(event, context):
     if event.get("httpMethod") == "OPTIONS":
-        return {"statusCode": 200, "headers": HEADERS, "body": ""}
+        return []
 
     try:
-        params = event.get("queryStringParameters") or {}
+        params = event.get("queryStringParameters") or event.get("query") or event
         title  = (params.get("title")  or "").strip()
         year   = (params.get("year")   or "").strip()
         artist = (params.get("artist") or "").strip()
@@ -101,8 +101,4 @@ def generate_presigned_url(s3_key):
 
 
 def respond(status, body):
-    return {
-        "statusCode": status,
-        "headers": HEADERS,
-        "body": json.dumps(body),
-    }
+    return body

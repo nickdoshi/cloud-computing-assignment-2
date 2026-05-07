@@ -59,7 +59,15 @@ def seed_table(table):
 
 
 def main():
-    dynamodb = boto3.resource("dynamodb", region_name=REGION)
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--endpoint", default=None, help="DynamoDB endpoint URL (e.g. http://localhost:8000)")
+    args = parser.parse_args()
+
+    kwargs = {"region_name": REGION}
+    if args.endpoint:
+        kwargs["endpoint_url"] = args.endpoint
+    dynamodb = boto3.resource("dynamodb", **kwargs)
 
     # Create table if it doesn't already exist
     try:
