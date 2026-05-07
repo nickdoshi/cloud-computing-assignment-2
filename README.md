@@ -311,7 +311,8 @@ Separate from Spring Boot — small standalone handlers in `backend-lambda/`. Ca
 | Attribute | Type | Key |
 |-----------|------|-----|
 | `artist` | String | Partition Key |
-| `title` | String | Sort Key |
+| `title_year_album` | String | Sort Key (composite: `title#year#album`)
+| `title` | String | — |
 | `year` | String | — |
 | `album` | String | — |
 | `image_url` | String | S3 object key (set by init script) |
