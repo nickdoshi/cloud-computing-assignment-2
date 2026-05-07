@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+2026a2_songs.json
+music-app-key.pem
