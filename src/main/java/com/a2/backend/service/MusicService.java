@@ -44,14 +44,27 @@ public class MusicService {
     }
 
     /**
-     * Looks up a single music record by its primary key (artist + title) and returns
+     * Looks up a single music record by its primary key (artist + title_year_album) and returns
      * the raw S3 object key stored in the "image_url" attribute.
      * Used by SubscriptionService when saving a new subscription.
      *
-     * TODO: call dynamoDb.getItem() with the artist (PK) and title (SK), return getString(item, "image_url").
      */
-    public String getImageKey(String artist, String title) {
-        // TODO: implement
+    public String getImageKey(String artist, String title, String year, String album) {
+        Map<String, AttributeValue> key = new HashMap<>();
+        key.put("artist", AttributeValue.fromS(artist));
+
+        String title_year_album = title + "#" + year + "#" + album;
+        key.put("title_year_album", AttributeValue.fromS(title_year_album));
+
+        GetItemRequest itemRequest =
+                GetItemRequest.builder().tableName(musicTable).key(key).build();
+
+        GetItemResponse response = dynamoDb.getItem(itemRequest);
+
+        if (response.item() != null) {
+            return  getString(response.item(), "image_url");
+        }
+
         return "";
     }
 
