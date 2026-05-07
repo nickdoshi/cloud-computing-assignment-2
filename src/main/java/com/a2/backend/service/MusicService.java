@@ -87,12 +87,15 @@ public class MusicService {
     /**
      * Converts a raw DynamoDB item map into a plain String map for the API response.
      * Fields: title, artist, year, album, image_url (pre-signed URL via generatePresignedUrl()).
-     *
-     * TODO: extract each attribute with getString(), call generatePresignedUrl() for image_url.
+     *.
      */
-    private Map<String, String> toSongMap(Map<String, AttributeValue> item) {
-        // TODO: implement
-        return Collections.emptyMap();
+    private Map<String, String> toSongMap(Map<String, AttributeValue> item) {        Map<String, String> song = new HashMap<>();
+        song.put("title",     getString(item, "title"));
+        song.put("artist",    getString(item, "artist"));
+        song.put("year",      getString(item, "year"));
+        song.put("album",     getString(item, "album"));
+        song.put("image_url", generatePresignedUrl(getString(item, "image_url")));
+        return song;
     }
 
     /**

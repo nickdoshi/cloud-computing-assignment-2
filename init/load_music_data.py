@@ -15,7 +15,7 @@ from botocore.exceptions import ClientError
 
 REGION     = "us-east-1"
 TABLE_NAME = "music"
-DEFAULT_JSON = pathlib.Path(__file__).parent / "2026a2_songs.json"
+DEFAULT_JSON = pathlib.Path(__file__).parent.parent / "2026a2_songs.json"
 
 
 def build_sort_key(song: dict) -> str:
