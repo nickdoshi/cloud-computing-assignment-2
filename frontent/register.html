@@ -57,7 +57,7 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email, user_name, password })
                 });
-                const data = await res.json();
+                const data = unwrapApiResponse(await res.json());
 
                 if (data.success) {
                     successEl.style.display = 'block';

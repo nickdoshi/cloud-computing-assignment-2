@@ -9,9 +9,16 @@
     --input-border: #727272;
     --divider:      #292929;
     --error-red:    #e91429;
+    --danger-bg:    #221619;
+    --danger:       #ff6b7a;
+    --danger-line:  #7f2b38;
 }
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
 body {
     background: var(--bg);
@@ -25,7 +32,10 @@ body {
     padding: 24px;
 }
 
-/* ── Card ─────────────────────────────────────────────── */
+body.app-page {
+    align-items: flex-start;
+}
+
 .card {
     background: var(--card-bg);
     border-radius: 8px;
@@ -35,7 +45,6 @@ body {
     text-align: center;
 }
 
-/* ── Logo / icon ──────────────────────────────────────── */
 .logo {
     font-size: 52px;
     margin-bottom: 28px;
@@ -50,7 +59,6 @@ h1 {
     margin-bottom: 36px;
 }
 
-/* ── Form ─────────────────────────────────────────────── */
 .form-group {
     text-align: left;
     margin-bottom: 16px;
@@ -81,9 +89,10 @@ input:focus {
     border-color: var(--white);
 }
 
-input::placeholder { color: var(--muted); }
+input::placeholder {
+    color: var(--muted);
+}
 
-/* ── Buttons ──────────────────────────────────────────── */
 .btn-primary {
     width: 100%;
     margin-top: 24px;
@@ -100,10 +109,14 @@ input::placeholder { color: var(--muted); }
     transition: background 0.15s, transform 0.1s;
 }
 
-.btn-primary:hover  { background: var(--green-hover); }
-.btn-primary:active { transform: scale(0.98); }
+.btn-primary:hover {
+    background: var(--green-hover);
+}
 
-/* ── Error / success messages ─────────────────────────── */
+.btn-primary:active {
+    transform: scale(0.98);
+}
+
 .alert {
     display: none;
     padding: 10px 14px;
@@ -123,7 +136,6 @@ input::placeholder { color: var(--muted); }
     color: var(--green);
 }
 
-/* ── Footer link ──────────────────────────────────────── */
 .card-footer {
     margin-top: 28px;
     padding-top: 28px;
@@ -138,4 +150,158 @@ input::placeholder { color: var(--muted); }
     text-decoration: underline;
 }
 
-.card-footer a:hover { color: var(--green); }
+.card-footer a:hover {
+    color: var(--green);
+}
+
+.app-shell {
+    width: min(1100px, 100%);
+    margin: 0 auto;
+}
+
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.app-logo {
+    font-size: 34px;
+    margin-bottom: 8px;
+}
+
+.app-title {
+    font-size: 28px;
+    margin-bottom: 6px;
+}
+
+.app-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+}
+
+.panel {
+    background: var(--card-bg);
+    border: 1px solid var(--divider);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.panel-title {
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.query-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.song-list {
+    display: grid;
+    gap: 12px;
+}
+
+.song-list.with-offset {
+    margin-top: 12px;
+}
+
+.song-row {
+    display: grid;
+    grid-template-columns: 72px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 12px;
+    border: 1px solid var(--divider);
+    border-radius: 6px;
+}
+
+.song-row img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 4px;
+    background: var(--divider);
+}
+
+.song-title {
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.song-meta,
+.status-line {
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.status-line.with-offset {
+    margin-top: 16px;
+}
+
+.small-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 0;
+    border-radius: 24px;
+    background: var(--green);
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.small-btn.secondary {
+    background: transparent;
+    color: var(--white);
+    border: 1px solid var(--input-border);
+}
+
+.small-btn.unsubscribe {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger-line);
+}
+
+.btn-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.18);
+    font-size: 13px;
+    line-height: 1;
+}
+
+.small-btn.unsubscribe .btn-icon {
+    background: var(--danger);
+    color: #16090c;
+}
+
+@media (max-width: 800px) {
+    .app-grid,
+    .query-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .song-row {
+        grid-template-columns: 56px 1fr;
+    }
+
+    .song-row img {
+        width: 56px;
+        height: 56px;
+    }
+
+    .song-row button {
+        grid-column: 1 / -1;
+    }
+}
