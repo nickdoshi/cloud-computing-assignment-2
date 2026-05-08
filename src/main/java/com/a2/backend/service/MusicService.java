@@ -29,45 +29,21 @@ public class MusicService {
         this.s3Presigner = s3Presigner;
     }
 
-    /**
-     * Main query method called by the controller.
-     * - If artist is provided: use DynamoDB Query on the base table (artist is the partition key).
-     * - If artist is NOT provided: use DynamoDB Scan with a FilterExpression.
-     * - All non-empty fields are combined with AND logic.
-     * - Returns a list of song maps with a pre-signed S3 URL for the artist image.
-     *
-     * TODO: implement query logic using buildFilterParts(), then map results via toSongMap().
-     */
     public List<Map<String, String>> query(String title, String year, String artist, String album) {
-        Map<String, String> names = new HashMap<>();
-        Map<String, AttributeValue> values = new HashMap<>();
+        List<Map<String, AttributeValue>> items = new ArrayList<>();
+        ScanRequest.Builder scanBuilder = ScanRequest.builder().tableName(musicTable);
+        ScanResponse response;
 
-        List<String> filterParts = buildFilterParts(title, year, album, names, values);
+        do {
+            response = dynamoDb.scan(scanBuilder.build());
+            items.addAll(response.items());
+            scanBuilder.exclusiveStartKey(response.lastEvaluatedKey());
+        } while (response.hasLastEvaluatedKey() && !response.lastEvaluatedKey().isEmpty());
 
-        // Scan with a filter expression
-        if (artist == null || artist.isBlank()) {
-            ScanRequest.Builder scanBuilder = ScanRequest.builder().tableName(musicTable);
-
-            if (!filterParts.isEmpty()) {
-                scanBuilder.filterExpression(String.join(" AND ", filterParts)).expressionAttributeNames(names).expressionAttributeValues(values);
-            }
-            ScanResponse scanResponse = dynamoDb.scan(scanBuilder.build());
-            return scanResponse.items().stream().map(this::toSongMap).collect(Collectors.toList());
-        }
-
-        names.put("#artist", "artist");
-        values.put(":artist", AttributeValue.fromS(artist));
-
-        // Query with partition key
-        QueryRequest.Builder queryBuilder =
-                QueryRequest.builder().tableName(musicTable).keyConditionExpression("#artist = :artist").expressionAttributeNames(names).expressionAttributeValues(values);
-        // Apply filter expression on other fields
-        if (!filterParts.isEmpty()) {
-            queryBuilder.filterExpression(String.join(" AND ", filterParts));
-        }
-        QueryResponse response = dynamoDb.query(queryBuilder.build());
-        return response.items().stream().map(this::toSongMap).collect(Collectors.toList());
-
+        return items.stream()
+                .filter(item -> matchesQuery(item, title, year, artist, album))
+                .map(this::toSongMap)
+                .collect(Collectors.toList());
     }
 
     /**
@@ -103,6 +79,7 @@ public class MusicService {
      */
     public String generatePresignedUrl(String s3Key) {
         if (s3Key == null || s3Key.isBlank()) return "";
+        if (s3Key.startsWith("http://") || s3Key.startsWith("https://")) return s3Key;
 
         try{
             GetObjectRequest getObjectRequest =
@@ -110,46 +87,23 @@ public class MusicService {
 
             GetObjectPresignRequest presignRequest =
                     GetObjectPresignRequest.builder().signatureDuration(Duration.ofHours(1)).getObjectRequest(getObjectRequest).build();
+            return s3Presigner.presignGetObject(presignRequest).url().toString();
         }
         catch (Exception e){
             return "";
         }
-
-        return "";
     }
 
-    /**
-     * Builds the DynamoDB FilterExpression parts for title, year, and album.
-     * Populates the provided names and values maps with expression attribute aliases.
-     *
-     * - title  → contains(#title, :title)   (partial match)
-     * - year   → #yr = :year                (exact match — "year" is a DynamoDB reserved word)
-     * - album  → contains(#album, :album)   (partial match)
-     *
-     */
-    private List<String> buildFilterParts(String title, String year, String album,
-                                          Map<String, String> names,
-                                          Map<String, AttributeValue> values) {
-        List<String> parts = new ArrayList<>();
-        if (title != null && !title.isBlank()) {
-            names.put("#title", "title");
-            values.put(":title", AttributeValue.fromS(title));
-            parts.add("contains(#title, :title)");
-        }
+    private boolean matchesQuery(Map<String, AttributeValue> item, String title, String year, String artist, String album) {
+        return containsIgnoreCase(getString(item, "title"), title)
+                && containsIgnoreCase(getString(item, "year"), year)
+                && containsIgnoreCase(getString(item, "artist"), artist)
+                && containsIgnoreCase(getString(item, "album"), album);
+    }
 
-        if (year != null && !year.isBlank()) {
-            names.put("#yr", "year");
-            values.put(":year", AttributeValue.fromS(year));
-            parts.add("#yr = :year");
-        }
-
-        if (album != null && !album.isBlank()) {
-            names.put("#album", "album");
-            values.put(":album", AttributeValue.fromS(album));
-            parts.add("contains(#album, :album)");
-        }
-
-        return parts;
+    private boolean containsIgnoreCase(String value, String query) {
+        if (query == null || query.isBlank()) return true;
+        return value != null && value.toLowerCase(Locale.ROOT).contains(query.trim().toLowerCase(Locale.ROOT));
     }
 
     /**

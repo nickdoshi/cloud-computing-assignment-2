@@ -30,7 +30,7 @@ public class SubscriptionController {
         return ResponseEntity.status(201).body(Map.of("success", true));
     }
 
-    // subscriptionId is URL-encoded "artist#title" (e.g. Taylor+Swift%23Love+Story)
+    // subscriptionId is URL-encoded "artist#title#year#album".
     @DeleteMapping("/{email}/{subscriptionId}")
     public ResponseEntity<Map<String, Object>> unsubscribe(
             @PathVariable String email,

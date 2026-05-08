@@ -1,5 +1,6 @@
 import json
 import boto3
+from urllib.parse import unquote
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
@@ -7,7 +8,7 @@ dynamodb = boto3.resource("dynamodb", region_name="us-east-1")
 subscriptions_table = dynamodb.Table("subscriptions")
 
 s3_client = boto3.client("s3", region_name="us-east-1")
-S3_BUCKET = "music-app-images-211-rmit"
+S3_BUCKET = "music-app-images-211"
 PRESIGN_EXPIRY = 3600  # 1 hour
 
 HEADERS = {
@@ -19,7 +20,13 @@ HEADERS = {
 
 
 def lambda_handler(event, context):
-    method = event.get("httpMethod") or event.get("method") or ""
+    method = (
+        event.get("httpMethod")
+        or event.get("method")
+        or event.get("requestContext", {}).get("httpMethod")
+        or event.get("requestContext", {}).get("http", {}).get("method")
+        or ""
+    ).upper()
 
     if method == "OPTIONS":
         return respond(200, {})
@@ -76,7 +83,7 @@ def handle_post(event):
     if not email or not artist or not title:
         return respond(400, {"message": "email, artist, and title are required"})
 
-    subscription_id = f"{artist}#{title}"
+    subscription_id = make_subscription_id(artist, title, year, album)
 
     subscriptions_table.put_item(Item={
         "email":           email,
@@ -104,8 +111,10 @@ def handle_delete(event):
     if not subscription_id:
         artist = (params.get("artist") or "").strip()
         title = (params.get("title") or "").strip()
+        year = (params.get("year") or "").strip()
+        album = (params.get("album") or "").strip()
         if artist and title:
-            subscription_id = f"{artist}#{title}"
+            subscription_id = make_subscription_id(artist, title, year, album)
 
     if not email or not subscription_id:
         return respond(400, {"message": "email and subscriptionId are required."})
@@ -129,9 +138,15 @@ def to_subscription_map(item):
     }
 
 
+def make_subscription_id(artist, title, year, album):
+    return f"{artist}#{title}#{year}#{album}"
+
+
 def generate_presigned_url(s3_key):
     if not s3_key:
         return ""
+    if s3_key.startswith("http://") or s3_key.startswith("https://"):
+        return s3_key
     try:
         return s3_client.generate_presigned_url(
             "get_object",
@@ -162,4 +177,5 @@ def get_params(event):
 
 
 def get_path_params(event):
-    return event.get("pathParameters") or event.get("path") or {}
+    params = event.get("pathParameters") or event.get("path") or {}
+    return {key: unquote(value) if isinstance(value, str) else value for key, value in params.items()}

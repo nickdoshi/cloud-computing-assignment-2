@@ -34,9 +34,9 @@ public class SubscriptionService {
                 .collect(Collectors.toList());
     }
 
-    // subscription_id = "artist#title" — natural key that prevents duplicate subscriptions.
+    // Include year and album so songs with the same artist/title remain distinct.
     public void addSubscription(String email, String title, String artist, String year, String album) {
-        String subscriptionId = artist + "#" + title;
+        String subscriptionId = makeSubscriptionId(artist, title, year, album);
         String imageKey = musicService.getImageKey(artist, title, year, album);
 
         Map<String, AttributeValue> item = new HashMap<>();
@@ -78,5 +78,13 @@ public class SubscriptionService {
     private String getString(Map<String, AttributeValue> item, String key) {
         AttributeValue val = item.get(key);
         return (val != null && val.s() != null) ? val.s() : "";
+    }
+
+    private String makeSubscriptionId(String artist, String title, String year, String album) {
+        return String.join("#",
+                Optional.ofNullable(artist).orElse(""),
+                Optional.ofNullable(title).orElse(""),
+                Optional.ofNullable(year).orElse(""),
+                Optional.ofNullable(album).orElse(""));
     }
 }
