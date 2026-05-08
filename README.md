@@ -39,10 +39,10 @@
 │   └── setup.sh                     # EC2 install: Java 17, Nginx (port 80→8080), systemd
 │
 ├── backend-lambda/                  # API Gateway + Lambda — separate from Spring Boot
-│   ├── login/                       # POST /login handler  ⚠️ not yet implemented
-│   ├── register/                    # POST /register handler  ⚠️ not yet implemented
-│   ├── music/                       # GET /music handler  ⚠️ not yet implemented
-│   └── subscriptions/               # GET/POST/DELETE handler  ⚠️ not yet implemented
+│   ├── login/                       # POST /login handler  
+│   ├── register/                    # POST /register handler  
+│   ├── music/                       # GET /music handler  
+│   └── subscriptions/               # GET/POST/DELETE handler  
 │
 ├── frontend/                        # Static site — hosted on S3
 │   ├── login.html                   # Login page  ✅ done
@@ -255,7 +255,7 @@ Same Spring Boot app, Dockerised. `Dockerfile` is at the repo root.
 
 Separate from Spring Boot — small standalone handlers in `backend-lambda/`. Can be written in Python or any supported runtime.
 
-- [ ] Write handler for each subfolder (`login/`, `register/`, `music/`, `subscriptions/`)
+- [X] Write handler for each subfolder (`login/`, `register/`, `music/`, `subscriptions/`)
 - [ ] Each handler calls DynamoDB / S3 directly via the AWS SDK
 - [ ] Create a REST API in API Gateway
 - [ ] Map `GET`, `POST`, `DELETE` HTTP methods to the correct Lambda (no all-POST shortcuts)

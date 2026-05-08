@@ -20,15 +20,23 @@ def lambda_handler(event, context):
         return {"statusCode": 200, "headers": HEADERS, "body": ""}
 
     try:
-        params = event.get("queryStringParameters") or {}
-        email  = (params.get("email")  or "").strip()
-        artist = (params.get("artist") or "").strip()
-        title  = (params.get("title")  or "").strip()
+        params = event.get("queryStringParameters") or event.get("query") or {}
+        path_params = event.get("pathParameters") or event.get("path") or {}
+        email = (path_params.get("email") or params.get("email") or "").strip()
+        subscription_id = (
+                path_params.get("subscriptionId")
+                or params.get("subscriptionId")
+                or ""
+        ).strip()
 
-        if not email or not artist or not title:
-            return respond(400, {"message": "email, artist, and title are required."})
+        if not subscription_id:
+            artist = (params.get("artist") or "").strip()
+            title = (params.get("title") or "").strip()
+            if artist and title:
+                subscription_id = f"{artist}#{title}"
 
-        subscription_id = f"{artist}#{title}"
+        if not email or not subscription_id:
+            return respond(400, {"message": "email and subscriptionId are required."})
 
         subscriptions_table.delete_item(Key={
             "email":           email,
@@ -36,6 +44,7 @@ def lambda_handler(event, context):
         })
 
         return respond(200, {"success": True, "message": "Unsubscribed successfully."})
+
 
     except ClientError as e:
 

@@ -23,8 +23,9 @@ def lambda_handler(event, context):
         return {"statusCode": 200, "headers": HEADERS, "body": ""}
 
     try:
-        params = event.get("queryStringParameters") or {}
-        email = (params.get("email") or "").strip()
+        params = event.get("queryStringParameters") or event.get("query") or {}
+        path_params = event.get("pathParameters") or event.get("path") or {}
+        email = (path_params.get("email") or params.get("email") or "").strip()
 
         if not email:
             return respond(400, {"message": "email is required."})

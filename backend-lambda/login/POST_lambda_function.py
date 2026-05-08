@@ -14,10 +14,10 @@ HEADERS = {
 
 def lambda_handler(event, context):
     if event.get("httpMethod") == "OPTIONS":
-        return {"statusCode": 200, "headers": HEADERS, "body": ""}
+        return respond(200, {})
 
     try:
-        body = json.loads(event.get("body", "{}"))
+        body = get_body(event)
         email    = body.get("email", "").strip()
         password = body.get("password", "").strip()
 
@@ -31,7 +31,7 @@ def lambda_handler(event, context):
 
         # Check if email exists and password is correct
         if not item or item.get("password") != password:
-            return respond(401, {"success": False, "message": "email or password is invalid"})
+            return respond(401, {"success": False, "message": "Email or password is invalid"})
 
         return respond(200, {
             "success": True,
@@ -46,6 +46,15 @@ def lambda_handler(event, context):
 def respond(status, body):
     return {
         "statusCode": status,
-        "headers": HEAD
-        "body": json.dumps(body),
+        "headers": HEADERS,
+        "body": json.dumps(body)
     }
+
+
+def get_body(event):
+    body = event.get("body")
+    if isinstance(body, str):
+        return json.loads(body or "{}")
+    if isinstance(body, dict):
+        return body
+    return event

@@ -20,7 +20,7 @@ def lambda_handler(event, context):
         return {"statusCode": 200, "headers": HEADERS, "body": ""}
 
     try:
-        body = json.loads(event.get("body", "{}"))
+        body = get_body(event)
         email    = body.get("email", "").strip()
         artist   = body.get("artist", "").strip()
         title    = body.get("title", "").strip()
@@ -56,3 +56,9 @@ def respond(status, body):
         "headers": HEADERS,
         "body": json.dumps(body),
     }
+def get_body(event):
+    body = event.get("body", {})
+    if isinstance(body, str):
+        return json.loads(body or "{}")
+    return body or {}
+
