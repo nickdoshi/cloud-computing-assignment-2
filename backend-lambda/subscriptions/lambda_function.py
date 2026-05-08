@@ -22,7 +22,7 @@ def lambda_handler(event, context):
     method = event.get("httpMethod") or event.get("method") or ""
 
     if method == "OPTIONS":
-        return {}
+        return respond(200, {})
 
     try:
         if method == "GET":
@@ -143,7 +143,11 @@ def generate_presigned_url(s3_key):
 
 
 def respond(status, body):
-    return body
+    return {
+        "statusCode": status,
+        "headers": HEADERS,
+        "body": json.dumps(body)
+    }
 
 
 def get_body(event):

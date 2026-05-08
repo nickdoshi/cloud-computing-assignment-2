@@ -20,7 +20,7 @@ HEADERS = {
 
 def lambda_handler(event, context):
     if event.get("httpMethod") == "OPTIONS":
-        return []
+        return respond(200, {})
 
     try:
         params = event.get("queryStringParameters") or event.get("query") or event
@@ -101,4 +101,8 @@ def generate_presigned_url(s3_key):
 
 
 def respond(status, body):
-    return body
+    return {
+        "statusCode": status,
+        "headers": HEADERS,
+        "body": json.dumps(body)
+    }

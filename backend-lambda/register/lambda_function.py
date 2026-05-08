@@ -13,7 +13,7 @@ HEADERS = {
 }
 def lambda_handler(event, context):
     if event.get("httpMethod") == "OPTIONS":
-        return {}
+        return respond(200, {})
 
     try:
         body = get_body(event)
@@ -44,7 +44,11 @@ def lambda_handler(event, context):
 
 
 def respond(status, body):
-    return body
+    return {
+        "statusCode": status,
+        "headers": HEADERS,
+        "body": json.dumps(body)
+    }
 
 
 def get_body(event):
