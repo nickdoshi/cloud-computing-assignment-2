@@ -26,7 +26,7 @@ public class SubscriptionController {
     @PostMapping
     public ResponseEntity<Map<String, Object>> subscribe(@RequestBody SubscribeRequest req) {
         subscriptionService.addSubscription(
-                req.email(), req.title(), req.artist(), req.year(), req.album());
+                req.email(), req.title(), req.artist(), req.year(), req.album(), req.imageUrl());
         return ResponseEntity.status(201).body(Map.of("success", true));
     }
 

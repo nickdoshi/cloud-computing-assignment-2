@@ -1,9 +1,9 @@
 package com.a2.backend.controller;
 
 import com.a2.backend.service.MusicService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 // template for music query, you can modify it as you like
@@ -34,11 +34,19 @@ public class MusicController {
      *
      */
     @GetMapping("/music")
-    public List<Map<String, String>> queryMusic(
+    public ResponseEntity<?> queryMusic(
             @RequestParam(required = false) String title,
             @RequestParam(required = false) String year,
             @RequestParam(required = false) String artist,
             @RequestParam(required = false) String album) {
-        return musicService.query(title, year, artist, album);
+        boolean anyPresent = (title != null && !title.isBlank())
+                || (year   != null && !year.isBlank())
+                || (artist != null && !artist.isBlank())
+                || (album  != null && !album.isBlank());
+        if (!anyPresent) {
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", "At least one query parameter is required."));
+        }
+        return ResponseEntity.ok(musicService.query(title, year, artist, album));
     }
 }

@@ -23,30 +23,39 @@ public class SubscriptionService {
     }
 
     public List<Map<String, String>> getSubscriptions(String email) {
-        QueryResponse response = dynamoDb.query(QueryRequest.builder()
-                .tableName(subscriptionsTable)
-                .keyConditionExpression("email = :email")
-                .expressionAttributeValues(Map.of(":email", AttributeValue.fromS(email)))
-                .build());
+        List<Map<String, AttributeValue>> items = new ArrayList<>();
+        Map<String, AttributeValue> lastKey = null;
 
-        return response.items().stream()
+        do {
+            QueryRequest.Builder builder = QueryRequest.builder()
+                    .tableName(subscriptionsTable)
+                    .keyConditionExpression("email = :email")
+                    .expressionAttributeValues(Map.of(":email", AttributeValue.fromS(email)));
+            if (lastKey != null) builder.exclusiveStartKey(lastKey);
+
+            QueryResponse response = dynamoDb.query(builder.build());
+            items.addAll(response.items());
+            lastKey = response.hasLastEvaluatedKey() && !response.lastEvaluatedKey().isEmpty()
+                    ? response.lastEvaluatedKey() : null;
+        } while (lastKey != null);
+
+        return items.stream()
                 .map(this::toSubscriptionMap)
                 .collect(Collectors.toList());
     }
 
     // Include year and album so songs with the same artist/title remain distinct.
-    public void addSubscription(String email, String title, String artist, String year, String album) {
+    public void addSubscription(String email, String title, String artist, String year, String album, String imageUrl) {
         String subscriptionId = makeSubscriptionId(artist, title, year, album);
-        String imageKey = musicService.getImageKey(artist, title, year, album);
 
         Map<String, AttributeValue> item = new HashMap<>();
         item.put("email", AttributeValue.fromS(email));
         item.put("subscription_id", AttributeValue.fromS(subscriptionId));
-        item.put("title", AttributeValue.fromS(title));
-        item.put("artist", AttributeValue.fromS(artist));
-        item.put("year", AttributeValue.fromS(year));
-        item.put("album", AttributeValue.fromS(album));
-        item.put("image_url", AttributeValue.fromS(imageKey));
+        item.put("title", AttributeValue.fromS(title != null ? title : ""));
+        item.put("artist", AttributeValue.fromS(artist != null ? artist : ""));
+        item.put("year", AttributeValue.fromS(year != null ? year : ""));
+        item.put("album", AttributeValue.fromS(album != null ? album : ""));
+        item.put("image_url", AttributeValue.fromS(imageUrl != null ? imageUrl : ""));
 
         dynamoDb.putItem(PutItemRequest.builder()
                 .tableName(subscriptionsTable)

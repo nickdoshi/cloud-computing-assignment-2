@@ -27,10 +27,10 @@ public class AuthController {
     public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequest req) {
         Optional<String> userName = authService.login(req.email(), req.password());
         if (userName.isPresent()) {
-            return ResponseEntity.ok(Map.of("success", true, "user_name", userName.get()));
+            return ResponseEntity.ok(Map.of("success", true, "user_name", userName.get(), "email", req.email()));
         }
         return ResponseEntity.status(401)
-                .body(Map.of("success", false, "message", "email or password is invalid"));
+                .body(Map.of("success", false, "message", "Email or password is invalid"));
     }
 
     @PostMapping("/register")
